@@ -1,2 +1,247 @@
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1559045618390739"
-     crossorigin="anonymous"></script>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBERPUNK VOID: INFINITY ELEVATION</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #030308; font-family: 'Segoe UI', system-ui, sans-serif; }
+        
+        /* Khung chứa game siêu cấp màn hình rộng */
+        #game-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+        canvas { background: radial-gradient(circle, #0c0f26 0%, #020205 100%); box-shadow: 0 0 100px rgba(0, 173, 181, 0.2); }
+        
+        /* Giao diện HUD hiển thị thông số siêu cấp tinh tế */
+        .hud-panel { position: absolute; color: #fff; text-transform: uppercase; font-weight: 900; letter-spacing: 2px; pointer-events: none; text-shadow: 0 0 10px var(--glow); }
+        #score-board { top: 20px; left: 30px; --glow: #00adb5; font-size: 20px; color: #00adb5; }
+        #level-board { top: 20px; right: 30px; --glow: #ff007f; font-size: 20px; color: #ff007f; }
+        
+        /* Bảng điều khiển nâng cấp vô hạn */
+        #upgrade-menu { position: absolute; background: rgba(5, 5, 15, 0.85); backdrop-filter: blur(20px); border: 2px solid #00adb5; border-radius: 20px; padding: 30px; width: 90%; max-width: 450px; text-align: center; color: white; display: none; box-shadow: 0 0 50px rgba(0, 173, 181, 0.4); animation: popup 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes popup { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .upgrade-btn { background: linear-gradient(135deg, #00adb5, #0072ff); color: white; border: none; padding: 12px; width: 100%; margin: 10px 0; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .upgrade-btn:hover { transform: translateY(-2px); box-shadow: 0 0 20px #00f5ff; }
+        
+        /* Vị trí quảng cáo tích hợp khéo léo dưới chân máy để kiếm tiền */
+        .game-ads-banner { position: absolute; bottom: 10px; width: 100%; text-align: center; z-index: 100; display: block; }
+    </style>
+    <script async src="https://googlesyndication.com" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div id="game-container">
+        <div id="score-board" class="hud-panel">SCORE: <span id="score">0</span></div>
+        <div id="level-board" class="hud-panel">WAVE: <span id="level">1</span></div>
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Menu nâng cấp sức mạnh vô hạn -->
+        <div id="upgrade-menu">
+            <h2 style="color: #00adb5; margin-bottom: 10px; letter-spacing: 2px;">⚡ KHÔNG GIAN NÂNG CẤP VÔ HẠN ⚡</h2>
+            <p style="font-size: 14px; color: #aaa; margin-bottom: 20px;">Chọn công nghệ tối tân để cường hóa phi thuyền của bạn</p>
+            <button class="upgrade-btn" onclick="buyUpgrade('speed')">Tăng tốc độ di chuyển (+15%)</button>
+            <button class="upgrade-btn" onclick="buyUpgrade('fireRate')">Tăng tốc độ bắn đạn (+20%)</button>
+            <button class="upgrade-btn" onclick="buyUpgrade('damage')">Gia tăng lõi sát thương (+25%)</button>
+        </div>
+        
+        <!-- 📢 QUẢNG CÁO KIẾM TIỀN TRONG GAME -->
+        <div class="game-ads-banner">
+            <ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-796230-sys" data-ad-slot="auto"></ins>
+            <script>(adsbygoogle = window.adsbygoogle ||).push({});</script>
+        </div>
+    </div>
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Tự động tối ưu hóa kích thước màn hình cực hạn
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    // Biến trạng thái trò chơi
+    let score = 0; let wave = 1; let gameActive = true;
+    let keys = {}; let particles = []; let bullets = []; let enemies = []; let stars = [];
+
+    // Cấu hình thông số phi thuyền siêu cấp (Người chơi)
+    let player = {
+        x: canvas.width / 2, y: canvas.height * 0.8,
+        width: 40, height: 45, speed: 6,
+        fireRate: 350, lastShot: 0, damage: 1
+    };
+
+    // Hệ thống tạo bụi sao giả lập không gian 3D có chiều sâu
+    for (let i = 0; i < 150; i++) {
+        stars.push({
+            x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+            size: Math.random() * 2, speed: Math.random() * 3 + 0.5
+        });
+    }
+
+    // Lắng nghe điều khiển từ bàn phím MacBook
+    window.addEventListener("keydown", (e) => keys[e.key] = true);
+    window.addEventListener("keyup", (e) => keys[e.key] = false);
+
+    // Lớp tạo hiệu ứng nổ hạt phát sáng (Neon Particle System)
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x; this.y = y; this.color = color;
+            this.size = Math.random() * 3 + 1;
+            this.speedX = Math.random() * 6 - 3;
+            this.speedY = Math.random() * 6 - 3;
+            this.alpha = 1;
+            this.decay = Math.random() * 0.02 + 0.015;
+        }
+        update() {
+            this.x += this.speedX; this.y += this.speedY;
+            this.alpha -= this.decay;
+        }
+        draw() {
+            ctx.save(); ctx.globalAlpha = this.alpha;
+            ctx.shadowBlur = 15; ctx.shadowColor = this.color;
+            ctx.fillStyle = this.color; ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        }
+    }
+</script>
+<script>
+    // Lớp vật thể Đạn laser neon
+    class Bullet {
+        constructor(x, y) {
+            this.x = x; this.y = y; this.radius = 4; this.speed = 12;
+        }
+        update() { this.y -= this.speed; }
+        draw() {
+            ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = "#00adb5";
+            ctx.fillStyle = "#00f5ff"; ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        }
+    }
+
+    // Lớp tạo quái vật ngoài hành tinh sở hữu AI tự tăng tốc độ
+    class Enemy {
+        constructor() {
+            this.x = Math.random() * (canvas.width - 50) + 25; this.y = -50;
+            this.width = 35; this.height = 35;
+            this.speed = Math.random() * 2 + 1 + (wave * 0.3); // Độ khó tăng vô hạn theo Wave
+            this.hp = Math.ceil(wave * 0.8);
+            this.color = `hsl(${Math.random() * 60 + 320}, 100%, 60%)`; // Tông màu neon hồng/tím kịch tính
+        }
+        update() { this.y += this.speed; }
+        draw() {
+            ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = this.color;
+            ctx.fillStyle = this.color;
+            
+            // Vẽ quái vật hình tam giác phi thuyền địch tinh tế
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y + this.height);
+            ctx.lineTo(this.x + this.width / 2, this.y);
+            ctx.lineTo(this.x + this.width, this.y + this.height);
+            ctx.closePath(); ctx.fill(); ctx.restore();
+        }
+    }
+
+    // Xử lý bắn đạn tự động khi giữ phím Space (Cách nhau theo Fire Rate)
+    function handleShooting() {
+        let now = Date.now();
+        if (keys[" "] && now - player.lastShot > player.fireRate) {
+            bullets.push(new Bullet(player.x, player.y));
+            player.lastShot = now;
+        }
+    }
+
+    // Cơ chế sinh quái vật liên tục
+    function spawnEnemies() {
+        if (enemies.length < 4 + wave && Math.random() < 0.02) {
+            enemies.push(new Enemy());
+        }
+    }
+</script>
+<script>
+    // Vòng lặp chính xử lý đồ họa chuyển động mượt mà (Game Loop 60fps)
+    function gameLoop() {
+        if (!gameActive) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. Dựng nền bụi sao không gian 3D di chuyển
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        stars.forEach(star => {
+            star.y += star.speed; if (star.y > canvas.height) star.y = 0;
+            ctx.fillRect(star.x, star.y, star.size, star.size);
+        });
+
+        // 2. Cập nhật và vẽ phi thuyền người chơi (Cyberpunk phong cách đa giác)
+        if (keys["ArrowLeft"] && player.x > 20) player.x -= player.speed;
+        if (keys["ArrowRight"] && player.x < canvas.width - 20) player.x += player.speed;
+        
+        ctx.save(); ctx.shadowBlur = 25; ctx.shadowColor = "#00adb5";
+        ctx.fillStyle = "#00adb5"; ctx.beginPath();
+        ctx.moveTo(player.x, player.y - player.height/2);
+        ctx.lineTo(player.x - player.width/2, player.y + player.height/2);
+        ctx.lineTo(player.x + player.width/2, player.y + player.height/2);
+        ctx.closePath(); ctx.fill(); ctx.restore();
+
+        // 3. Xử lý logic Đạn bắn ra
+        handleShooting();
+        bullets.forEach((b, index) => {
+            b.update(); b.draw();
+            if (b.y < 0) bullets.splice(index, 1);
+        });
+
+        // 4. Quản lý Quái vật và Kiểm tra va chạm (Collision Detection)
+        spawnEnemies();
+        enemies.forEach((e, eIdx) => {
+            e.update(); e.draw();
+
+            // Quái vật chạm đáy -> Kích hoạt menu nâng cấp độ khó vô hạn
+            if (e.y > canvas.height) {
+                enemies.splice(eIdx, 1); wave++;
+                document.getElementById("level").innerText = wave;
+                openUpgradeMenu();
+            }
+
+            // Đạn trúng quái vật -> Vỡ thành chuỗi hạt lượng tử siêu đẹp
+            bullets.forEach((b, bIdx) => {
+                if (b.x > e.x && b.x < e.x + e.width && b.y > e.y && b.y < e.y + e.height) {
+                    bullets.splice(bIdx, 1); e.hp -= player.damage;
+                    if (e.hp <= 0) {
+                        for(let i=0; i<15; i++) particles.push(new Particle(e.x+e.width/2, e.y+e.height/2, e.color));
+                        enemies.splice(eIdx, 1); score += 10;
+                        document.getElementById("score").innerText = score;
+                    }
+                }
+            });
+        });
+
+        // 5. Cập nhật các hạt nổ rực rỡ hiệu ứng
+        particles.forEach((p, index) => {
+            p.update(); p.draw();
+            if (p.alpha <= 0) particles.splice(index, 1);
+        });
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Hệ thống quản lý thực thi menu nâng cấp sức mạnh
+    function openUpgradeMenu() {
+        gameActive = false;
+        document.getElementById("upgrade-menu").style.display = "block";
+    }
+    
+    function buyUpgrade(type) {
+        if (type === 'speed') player.speed *= 1.15;
+        if (type === 'fireRate') player.fireRate *= 0.8;
+        if (type === 'damage') player.damage += 1;
+        
+        document.getElementById("upgrade-menu").style.display = "none";
+        gameActive = true; gameLoop(); // Tiếp tục trò chơi vô hạn
+    }
+
+    // Khởi chạy game ngay lập tức
+    gameLoop();
+</script>
+</body>
+</html>
