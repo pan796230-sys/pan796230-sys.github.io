@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechStore Ultimate - Sàn Công Nghệ Siêu Cấp Tinh Tế</title>
+    <style>
+        :root {
+            --primary: #00adb5; --primary-hover: #00f5ff;
+            --dark-bg: #0b0c10; --card-dark: #1f2833;
+            --light-bg: #f4f7f6; --card-light: #ffffff;
+            --text-light: #1f2833; --text-dark: #c5c6c7;
+            --price: #ff4d4d; --safe-transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        
+        /* Giao diện thích ứng chế độ hệ thống (Dark/Light Mode) */
+        body { background-color: var(--light-bg); color: var(--text-light); transition: var(--safe-transition); overflow-x: hidden; }
+        @media (prefers-color-scheme: dark) {
+            body { background-color: var(--dark-bg); color: var(--text-dark); }
+            .product-card { background: var(--card-dark) !important; border-color: #2d3748 !important; }
+            .modal-content { background: var(--card-dark) !important; color: white; }
+            header { background: rgba(11, 12, 16, 0.8) !important; }
+            .search-bar { background: #151a22 !important; color: white; }
+        }
+
+        /* Thanh thông báo chạy hiệu ứng neon */
+        .premium-ticker { background: linear-gradient(90deg, #0072ff, #00adb5, #0072ff); background-size: 200% auto; color: #fff; padding: 8px; text-align: center; font-size: 13px; font-weight: 700; animation: shine 4s linear infinite; }
+        @keyframes shine { to { background-position: 200% center; } }
+
+        /* Thanh Header hiệu ứng kính mờ (Glassmorphism) */
+        header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 15px 8%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 30px rgba(0,0,0,0.03); }
+        .logo { font-size: 28px; font-weight: 900; background: linear-gradient(45deg, #00adb5, #0072ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; cursor: pointer; }
+        
+        .search-container { flex: 0 1 450px; display: flex; }
+        .search-bar { width: 100%; padding: 12px 20px; border-radius: 30px; border: 1px solid #e2e8f0; background: #f1f5f9; font-size: 14px; transition: var(--safe-transition); outline: none; }
+        .search-bar:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 15px rgba(0, 173, 181, 0.2); }
+        
+        .cart-box { background: linear-gradient(135deg, #1a1a1a, #2d2d2d); color: white; padding: 10px 22px; border-radius: 30px; font-weight: 600; cursor: pointer; transition: var(--safe-transition); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .cart-box:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(0, 173, 181, 0.3); }
+
+        /* Banner quảng cáo tự động thích ứng độ rộng */
+        .ads-global-banner { width: 100%; max-width: 1400px; margin: 20px auto; text-align: center; padding: 10px; background: rgba(128,128,128,0.05); border-radius: 12px; font-size: 11px; color: #a0aec0; text-transform: uppercase; letter-spacing: 2px; }
+
+        /* Vùng điều hướng danh mục siêu tinh tế */
+        .category-nav { max-width: 1400px; margin: 20px auto; padding: 0 8%; display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; }
+        .category-nav::-webkit-scrollbar { display: none; }
+        .cat-btn { padding: 8px 20px; border: 1px solid #edf2f7; background: #fff; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; transition: var(--safe-transition); color: #4a5568; white-space: nowrap; }
+        .cat-btn.active, .cat-btn:hover { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-2px); }
+
+        /* Kiến trúc bố cục 2 cột chuyên nghiệp */
+        .layout-grid { max-width: 1400px; margin: 0 auto; padding: 0 8% 40px 8%; display: grid; grid-template-columns: 1fr 300px; gap: 35px; }
+        @media (max-width: 1100px) { .layout-grid { grid-template-columns: 1fr; } .sidebar-ads-panel { display: none; } }
+
+        .products-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 30px; }
+        
+        /* Hiệu ứng thẻ sản phẩm siêu cấp mượt mà */
+        .product-card { background: var(--card-light); border-radius: 20px; padding: 22px; border: 1px solid #edf2f7; box-shadow: 0 10px 30px rgba(0,0,0,0.01); display: flex; flex-direction: column; justify-content: space-between; transition: var(--safe-transition); position: relative; }
+        .product-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 20px 40px rgba(0,0,0,0.08); border-color: rgba(0, 173, 181, 0.4); }
+        
+        .tag-premium { position: absolute; top: 15px; left: 15px; background: linear-gradient(135deg, #ff4d4d, #ff7675); color: white; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        .img-viewport { width: 100%; height: 160px; background: linear-gradient(135deg, #f6f9fc, #eef2f7); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 55px; margin-bottom: 18px; transition: var(--safe-transition); }
+        .product-card:hover .img-viewport { transform: scale(1.05) rotate(2deg); }
+        
+        .stars { color: #ffbc00; font-size: 14px; margin-bottom: 6px; }
+        .title-display { font-size: 16px; font-weight: 700; height: 48px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 10px; }
+        .price-display { color: var(--price); font-size: 20px; font-weight: 800; margin-bottom: 15px; display: flex; align-items: baseline; gap: 5px; }
+        .price-display span { font-size: 12px; color: #a0aec0; text-decoration: line-through; font-weight: 500; }
+        
+        .action-button { background: linear-gradient(135deg, #1a1a1a, #2d2d2d); color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 14px; width: 100%; transition: var(--safe-transition); }
+        .product-card:hover .action-button { background: linear-gradient(135deg, #00adb5, #0072ff); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 173, 181, 0.4); }
+
+        /* Hệ thống cửa sổ Modals cao cấp */
+        .premium-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 2000; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 35px; border-radius: 24px; max-width: 550px; width: 92%; position: relative; box-shadow: 0 25px 50px rgba(0,0,0,0.15); animation: ultraZoom 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes ultraZoom { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .exit-icon { position: absolute; top: 20px; right: 25px; font-size: 26px; cursor: pointer; color: #a0aec0; transition: 0.2s; }
+        .exit-icon:hover { color: #000; }
+
+        .sidebar-ads-panel { background: rgba(128,128,128,0.02); border: 1px dashed #cbd5e0; border-radius: 20px; padding: 20px; text-align: center; display: flex; flex-direction: column; gap: 20px; }
+        .coupon-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 10px; outline: none; }
+        footer { background: var(--dark-bg); color: #718096; text-align: center; padding: 40px; font-size: 14px; border-top: 4px solid var(--primary); }
+    </style>
+    <!-- 🟢 ĐÃ LIÊN KẾT ĐỒNG BỘ MÃ QUẢNG CÁO ĐỊNH DANH CỦA BẠN -->
+    <script async src="https://googlesyndication.com" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="premium-ticker">⚡ ULTIMATE EDITION: HỆ THỐNG PHÂN PHỐI CÔNG NGHỆ CAO CẤP TỰ ĐỘNG ĐÃ SẴN SÀNG!</div>
+    <header>
+        <div class="logo" onclick="window.location.reload()">TechStore Pro</div>
+        <div class="search-container">
+            <input type="text" class="search-bar" id="search-input" placeholder="Tìm kiếm sản phẩm đỉnh cao..." onkeyup="filterProducts()">
+        </div>
+        <div class="cart-box" onclick="openCart()">🛒 Giỏ hàng (<span id="cart-count">0</span>)</div>
+    </header>
+    <!-- Vị trí quảng cáo 1: Banner Thích ứng đầu trang -->
+    <div class="ads-global-banner">
+        <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-796230-sys" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+
+    <!-- Hệ thống chuyển đổi bộ lọc sản phẩm thời gian thực -->
+    <nav class="category-nav">
+        <button class="cat-btn active" onclick="switchCategory('all', this)">✨ Tất cả sản phẩm</button>
+        <button class="cat-btn" onclick="switchCategory('apple', this)">🍏 Hệ sinh thái Apple</button>
+        <button class="cat-btn" onclick="switchCategory('audio', this)">🎵 Thiết bị Âm thanh</button>
+        <button class="cat-btn" onclick="switchCategory('gadget', this)">🎮 Đồ chơi Công nghệ</button>
+    </nav>
+
+    <div class="layout-grid">
+        <!-- Cột chính chứa danh sách sản phẩm -->
+        <main class="products-container" id="main-products-view">
+            
+            <!-- Sản phẩm 1 -->
+            <div class="product-card" data-cat="apple" data-name="iphone 15 pro max titan">
+                <span class="tag-premium">Hot</span>
+                <div class="img-viewport">📱</div>
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <div class="title-display">iPhone 15 Pro Max 256GB - Khung vỏ Titan</div>
+                <div class="price-display">29.490.000 đ <span>34.990.000 đ</span></div>
+                <button class="action-button" onclick="inspectProduct('iPhone 15 Pro Max', '29.490.000 đ', 'Hệ thống vỏ vật liệu cấp hàng không vũ trụ siêu nhẹ, cảm biến camera tiệm cận kích thước lớn nhất và chip vi xử lý tiến trình 3nm đầu tiên trên thế giới.')">Chi Tiết Sản Phẩm</button>
+            </div>
+
+            <!-- Sản phẩm 2 -->
+            <div class="product-card" data-cat="apple" data-name="macbook air m3 mỏng nhẹ">
+                <span class="tag-premium">New</span>
+                <div class="img-viewport">💻</div>
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <div class="title-display">MacBook Air 13 inch M3 (2024) - Siêu Mỏng Nhẹ</div>
+                <div class="price-display">26.990.000 đ <span>29.990.000 đ</span></div>
+                <button class="action-button" onclick="inspectProduct('MacBook Air M3', '26.990.000 đ', 'Kiến trúc vi xử lý Apple Silicon M3 mang lại khả năng xử lý đồ họa tăng 60% kết hợp quạt tản nhiệt yên tĩnh tuyệt đối.')">Chi Tiết Sản Phẩm</button>
+            </div>
+
+            <!-- Sản phẩm 3 -->
+            <div class="product-card" data-cat="apple" data-name="ipad pro m4 oled">
+                <span class="tag-premium">Lux</span>
+                <div class="img-viewport">📟</div>
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <div class="title-display">iPad Pro 11 inch M4 Ultra-Thin OLED</div>
+                <div class="price-display">28.190.000 đ <span>31.500.000 đ</span></div>
+                <button class="action-button" onclick="inspectProduct('iPad Pro M4', '28.190.000 đ', 'Màn hình công nghệ Tandem OLED mang lại độ sáng toàn màn hình lên tới 1000 nits, định nghĩa lại mọi tiêu chuẩn đồ họa di động.')">Chi Tiết Sản Phẩm</button>
+            </div>
+
+            <!-- Vị trí quảng cáo 2: Lồng ghép trực tiếp vào danh sách sản phẩm -->
+            <div class="product-card" style="border: 2px dashed var(--primary); background: rgba(0,173,181,0.02);">
+                <span class="tag-premium" style="background:var(--primary)">Ads</span>
+                <div style="height:100%; display:flex; align-items:center; justify-content:center; padding-top:20px;">
+                    <ins class="adsbygoogle" style="display:inline-block;width:250px;height:250px" data-ad-client="ca-pub-796230-sys" data-ad-slot="auto"></ins>
+                    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                </div>
+            </div>
+
+            <!-- Sản phẩm 4 -->
+            <div class="product-card" data-cat="apple" data-name="apple watch ultra 2 titan">
+                <span class="tag-premium">Pro</span>
+                <div class="img-viewport">⌚</div>
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <div class="title-display">Apple Watch Ultra 2 GPS + Cellular 49mm</div>
+                <div class="price-display">21.490.000 đ <span>23.990.000 đ</span></div>
+                <button class="action-button" onclick="inspectProduct('Apple Watch Ultra 2', '21.490.000 đ', 'Thiết bị thám hiểm chuyên nghiệp, cảm biến đo độ sâu tích hợp, bản đồ ngoại tuyến thông minh và thời lượng pin tối ưu lên tới 72 giờ.')">Chi Tiết Sản Phẩm</button>
+            </div>
+
+            <!-- Sản phẩm 5 -->
+            <div class="product-card" data-cat="audio" data-name="tai nghe airpods pro gen 2 noise cancelling">
+                <span class="tag-premium">Audio</span>
+                <div class="img-viewport">🎧</div>
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <div class="title-display">Tai nghe Bluetooth Apple AirPods Pro Gen 2</div>
+                <div class="price-display">5.590.000 đ <span>6.500.000 đ</span></div>
+                <button class="action-button" onclick="inspectProduct('AirPods Pro Gen 2', '5.590.000 đ', 'Khả năng chủ động khử tiếng ồn môi trường gấp 2 lần, thuật toán âm thanh thích ứng liên tục theo cấu trúc vòm tai.')">Chi Tiết Sản Phẩm</button>
+            </div>
+
+            <!-- Sản phẩm 6 -->
+            <div class="product-card" data-cat="audio" data-name="loa bluetooth jbl charge 5 waterproof">
+                <span class="tag-premium">Sale</span>
+                <div class="img-viewport">🔊</div>
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <div class="title-display">Loa Bluetooth Chống Nước JBL Charge 5 40W</div>
+                <div class="price-display">3.650.000 đ <span>4.200.000 đ</span></div>
+                <button class="action-button" onclick="inspectProduct('Loa JBL Charge 5', '3.650.000 đ', 'Trang bị màng loa treble độc lập cùng màng cộng hưởng kép thụ động mang lại uy lực âm trầm bùng nổ, thời lượng pin 20 tiếng hoạt động liên tục.')">Chi Tiết Sản Phẩm</button>
+            </div>
+            <!-- Sản phẩm 7 -->
+            <div class="product-card" data-cat="audio" data-name="tai nghe chup tai sony wh-1000xm5">
+                <span class="tag-premium">Best</span>
+                <div class="img-viewport">🎧</div>
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <div class="title-display">Tai nghe chụp tai Sony WH-1000XM5 Premium</div>
+                <div class="price-display">7.990.000 đ <span>9.500.000 đ</span></div>
+                <button class="action-button" onclick="inspectProduct('Sony WH-1000XM5', '7.990.000 đ', 'Bộ xử lý tích hợp V1 xử lý luồng âm thanh kỹ thuật số độ phân giải cao Hi-Res không dây mượt mà và tinh khiết tuyệt đối.')">Chi Tiết Sản Phẩm</button>
+            </div>
+
+            <!-- Sản phẩm 8 -->
+            <div class="product-card" data-cat="gadget" data-name="ban phim co logitech mx mechanical">
+                <span class="tag-premium">Work</span>
+                <div class="img-viewport">⌨️</div>
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <div class="title-display">Bàn phím cơ không dây Logitech MX Mechanical</div>
+                <div class="price-display">3.890.000 đ <span>4.300.000 đ</span></div>
+                <button class="action-button" onclick="inspectProduct('Logitech MX Mechanical', '3.890.000 đ', 'Hành trình phím switch cơ học cấu hình thấp mang lại phản hồi xúc giác êm ái, tối ưu hiệu suất gõ văn bản tốc độ cao.')">Chi Tiết Sản Phẩm</button>
+            </div>
+
+            <!-- Sản phẩm 9 -->
+            <div class="product-card" data-cat="gadget" data-name="chuot khong day logitech mx master 3s công thái học">
+                <span class="tag-premium">Office</span>
+                <div class="img-viewport">🖱️</div>
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <div class="title-display">Chuột không dây Logitech MX Master 3S</div>
+                <div class="price-display">2.350.000 đ <span>2.690.000 đ</span></div>
+                <button class="action-button" onclick="inspectProduct('Logitech MX Master 3S', '2.350.000 đ', 'Thiết kế độ nghiêng công thái học giảm mỏi cơ tay, con lăn kim loại MagSpeed cuộn nhanh 1000 dòng văn bản chỉ trong 1 giây.')">Chi Tiết Sản Phẩm</button>
+            </div>
+
+            <!-- Sản phẩm 10 -->
+            <div class="product-card" data-cat="gadget" data-name="may choi game sony playstation 5 ps5 slim">
+                <span class="tag-premium">Gaming</span>
+                <div class="img-viewport">🎮</div>
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <div class="title-display">Máy chơi game Sony PlayStation 5 Slim 1TB</div>
+                <div class="price-display">12.890.000 đ <span>14.800.000 đ</span></div>
+                <button class="btn-buy" style="margin-bottom:8px" onclick="directAdd('PlayStation 5 Slim', 12890000)">Mua Ngay</button>
+                <button class="action-button" onclick="inspectProduct('PlayStation 5 Slim', '12.890.000 đ', 'Cỗ máy giải trí tối thượng hỗ trợ xuất hình ảnh độ phân giải 4K tần số quét 120Hz, mang lại trải nghiệm thế giới ảo chân thực nhất.')">Thông Số Chi Tiết</button>
+            </div>
+
+            <!-- Sản phẩm 11 -->
+            <div class="product-card" data-cat="gadget" data-name="sac du phong anker prime 200w 20000mah">
+                <span class="tag-premium">Utility</span>
+                <div class="img-viewport">🔋</div>
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <div class="title-display">Sạc dự phòng Anker Prime 200W 20.000mAh</div>
+                <div class="price-display">2.450.000 đ <span>2.990.000 đ</span></div>
+                <button class="action-button" onclick="inspectProduct('Anker Prime 200W', '2.450.000 đ', 'Màn hình kỹ thuật số hiển thị thông số dòng điện thời gian thực, tổng công suất sạc cực đại 200W đáp ứng mọi thiết bị.')">Chi Tiết Sản Phẩm</button>
+            </div>
+
+            <!-- Sản phẩm 12 -->
+            <div class="product-card" data-cat="gadget" data-name="kinh thuc te ao thong minh meta quest 3 vr">
+                <span class="tag-premium">Future</span>
+                <div class="img-viewport">🥽</div>
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <div class="title-display">Kính thực tế ảo thông minh Meta Quest 3 128GB</div>
+                <div class="price-display">13.200.000 đ <span>15.500.000 đ</span></div>
+                <button class="action-button" onclick="inspectProduct('Meta Quest 3 128GB', '13.200.000 đ', 'Hệ thống thấu kính chuyên cấp pancake giảm thiểu hiện tượng méo ảnh, đưa người dùng nhập vai hoàn toàn vào thế giới không gian 3 chiều.')">Chi Tiết Sản Phẩm</button>
+            </div>
+        </main>
+        
+        <!-- Cột bên phải: Khối quản lý Coupon và Quảng cáo dọc cố định -->
+        <aside class="sidebar-ads-panel">
+            <div style="background: white; padding: 20px; border-radius: 14px; border:1px solid #edf2f7; text-align:left;">
+                <h4 style="margin-bottom:10px;">🎟️ Mã Giảm Giá Hệ Thống</h4>
+                <input type="text" id="coupon-code" class="coupon-input" placeholder="Nhập mã CODE tại đây...">
+                <button class="action-button" onclick="applyCoupon()">Áp Dụng Mã</button>
+                <p id="coupon-status" style="font-size:12px; margin-top:8px; font-weight:700;"></p>
+            </div>
+            
+            <!-- Vị trí quảng cáo 3: Banner Dọc Skyscraper ở cột bên -->
+            <div style="position: sticky; top: 100px;">
+                <ins class="adsbygoogle" style="display:inline-block;width:240px;height:400px" data-ad-client="ca-pub-796230-sys" data-ad-slot="auto" data-ad-format="vertical"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+        </aside>
+    </div>
+    <!-- Vị trí quảng cáo 4: Banner Ngang lớn dưới chân trang -->
+    <div class="ads-global-banner">
+        <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-796230-sys" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+
+    <!-- Popup 1: Xem thông tin chi tiết siêu cấp tinh tế -->
+    <div id="inspect-modal" class="premium-modal" onclick="closeInspect()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="exit-icon" onclick="closeInspect()">&times;</span>
+            <h2 id="ins-title" style="margin-bottom:15px; background:linear-gradient(45deg, #00adb5, #0072ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent;"></h2>
+            <p id="ins-price" style="font-size:24px; color:var(--price); font-weight:800; margin-bottom:15px;"></p>
+            <p id="ins-desc" style="font-size:15px; color:#4a5568; margin-bottom:25px; text-align:justify; line-height:1.7;"></p>
+            
+            <!-- Vị trí quảng cáo 5: Nhúng tự động ngay bên trong Popup tăng tối đa CTR -->
+            <div style="background:#f7fafc; padding:10px; border-radius:12px; text-align:center;">
+                <ins class="adsbygoogle" style="display:inline-block;width:300px;height:100px" data-ad-client="ca-pub-796230-sys" data-ad-slot="auto"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+            
+            <button class="action-button" id="ins-buy-btn" style="margin-top:20px;">Thêm Vào Giỏ Hàng Sở Hữu Ngay</button>
+        </div>
+    </div>
+
+    <!-- Popup 2: Bảng quản lý giỏ hàng cao cấp tính tổng tiền -->
+    <div id="cart-modal" class="premium-modal" onclick="closeCart()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="exit-icon" onclick="closeCart()">&times;</span>
+            <h2 style="margin-bottom:20px; font-weight:800; border-bottom:3px solid var(--primary); padding-bottom:10px;">🛒 Giỏ Hàng Công Nghệ</h2>
+            <div id="cart-rendered-items" style="max-height:280px; overflow-y:auto; margin-bottom:20px;"></div>
+            <h3 style="text-align:right; font-size:20px; margin-bottom:20px;">Tổng hóa đơn: <span id="cart-total-cost" style="color:var(--price); font-weight:800;">0 đ</span></h3>
+            <button class="action-button" onclick="alert('Hệ thống kiểm thử thanh toán thành công!')">Tiến Hành Thanh Toán Quốc Tế</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 TechStore Ultimate Ecosystem. Engineered for extreme experience.</p>
+    </footer>
+
+    <script>
+        let cartStorage = {}; let globalDiscount = 1;
+        
+        function inspectProduct(title, priceStr, description) {
+            document.getElementById('ins-title').innerText = title;
+            document.getElementById('ins-price').innerText = priceStr;
+            document.getElementById('ins-desc').innerText = description;
+            let numericVal = parseInt(priceStr.replace(/[^0-9]/g, ''));
+            document.getElementById('ins-buy-btn').onclick = function() {
+                directAdd(title, numericVal); closeInspect();
+            };
+            document.getElementById('inspect-modal').style.display = "flex";
+        }
+        function closeInspect() { document.getElementById('inspect-modal').style.display = "none"; }
+        
+        function directAdd(name, price) {
+            if(cartStorage[name]) { cartStorage[name].qty += 1; } 
+            else { cartStorage[name] = { price: price, qty: 1 }; }
+            renderCartUI();
+        }
+        function modifyQty(name, delta) {
+            cartStorage[name].qty += delta;
+            if(cartStorage[name].qty <= 0) { delete cartStorage[name]; }
+            renderCartUI();
+        }
+        function renderCartUI() {
+            let totalQty = 0; let grossTotal = 0; let outputHtml = "";
+            let container = document.getElementById('cart-rendered-items');
+            for(let name in cartStorage) {
+                totalQty += cartStorage[name].qty;
+                grossTotal += cartStorage[name].price * cartStorage[name].qty;
+                outputHtml += `<div style="display:flex; justify-content:between; align-items:center; padding:12px 0; border-bottom:1px solid #edf2f7;">
+                    <div style="font-weight:700; font-size:14px; flex:1;">${name}</div>
+                    <div style="margin: 0 15px;">
+                        <button style="width:24px; height:24px; cursor:pointer;" onclick="modifyQty('${name}', -1)">-</button>
+                        <span style="font-weight:700; margin:0 5px;">${cartStorage[name].qty}</span>
+                        <button style="width:24px; height:24px; cursor:pointer;" onclick="modifyQty('${name}', 1)">+</button>
+                    </div>
+                    <div style="color:var(--price); font-weight:800;">${(cartStorage[name].price * cartStorage[name].qty).toLocaleString('vi-VN')} đ</div>
+                </div>`;
+            }
+            document.getElementById('cart-count').innerText = totalQty;
+            document.getElementById('cart-total-cost').innerText = (grossTotal * globalDiscount).toLocaleString('vi-VN') + " đ";
+            container.innerHTML = outputHtml === "" ? "<p style='color:#aaa; text-align:center; padding:20px;'>Giỏ hàng rỗng!</p>" : outputHtml;
+        }
+        
+        function openCart() { document.getElementById('cart-modal').style.display = "flex"; renderCartUI(); }
+        function closeCart() { document.getElementById('cart-modal').style.display = "none"; }
+        
+        function switchCategory(cat, element) {
+            let btns = document.getElementsByClassName('cat-btn');
+            for(let b of btns) b.classList.remove('active');
+            element.classList.add('active');
+            let cards = document.getElementsByClassName('product-card');
+            for (let c of cards) {
+                let itemCat = c.getAttribute('data-cat');
+                if(!itemCat) continue;
+                c.style.display = (cat === 'all' || itemCat === cat) ? "flex" : "none";
+            }
+        }
+        
+        function filterProducts() {
+            let query = document.getElementById('search-input').value.toLowerCase();
+            let cards = document.getElementsByClassName('product-card');
+            for (let c of cards) {
+                let name = c.getAttribute('data-name');
+                if (name) { c.style.display = name.includes(query) ? "flex" : "none"; }
+            }
+        }
+        
+        function applyCoupon() {
+            let code = document.getElementById('coupon-code').value.toUpperCase();
+            let status = document.getElementById('coupon-status');
+            if(code === "ULTIMATE20") {
+                globalDiscount = 0.8; status.innerText = "MÃ ĐÃ ÁP DỤNG: GIẢM GIÁ 20%!"; status.style.color = "#00adb5";
+            } else {
+                status.innerText = "MÃ KHÔNG HỢP LỆ!"; status.style.color = "red";
+            }
+            renderCartUI();
+        }
+    </script>
+</body>
+</html>
